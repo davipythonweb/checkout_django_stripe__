@@ -1,2 +1,0 @@
-email_stripe=galaxys3tab32@gmail.com
-pass_stripe=Teste*50001_checkout
