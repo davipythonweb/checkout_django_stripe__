@@ -104,6 +104,7 @@ def stripe_webhook(request):
         session = event['data']['object']
 
         print(session)
+
         # pegando os dados para salvar em banco
         order = Order(product_id=session['metadata']['id_product'],
                      email=session['customer_details']['email'],
@@ -111,6 +112,7 @@ def stripe_webhook(request):
                      address = session['metadata']['address'],
                      status= event['type'],)
         order.save()
+        
         print('Aprovada')
 
     return HttpResponse(status=200)
