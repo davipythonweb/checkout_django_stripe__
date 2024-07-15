@@ -2,9 +2,14 @@ from django.shortcuts import render
 
 import stripe
 from django.conf import settings
+import stripe.error
+import stripe.webhook
 
 from .models import Product
 from django.http import JsonResponse, HttpResponse
+
+from django.views.decorators.csrf import csrf_exempt
+
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -54,9 +59,79 @@ def erro(request):
     return HttpResponse('Erro!')
 
 
+"""
+comando para ouvir o webhook do stripe[roda no terminal dentro da pasta com arquivo stripe]
+./stripe listen --forward-to localhost:8000/stripe_webhook
+"""
 
 
-# se fosse em produção
+# SEM segurança de verificação do token webhook 
+# @csrf_exempt
+# def stripe_webhook(request):
+#     payload = request.body
+
+#     # comment: For now, you only nedd print out the webhook payload so you can see
+#     # comment: the structure.
+#     print(payload)
+
+#     return HttpResponse(status=200)
+
+
+
+# com segurança de verificação do token webhook 
+@csrf_exempt
+def stripe_webhook(request):
+    payload = request.body
+    sig_header = request.META['HTTP_STRIPE_SIGNATURE']
+    event = None
+    endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, endpoint_secret
+        )
+    except ValueError as e:
+        # invalid payload
+        return HttpResponse(status=400)
+    except stripe.error.SignatureVerificationError as e:
+        # invalid signature
+        return HttpResponse(status=400)
+    
+    # quando a compra está aprovada(pode ser feito varias coisas, como enviar um email de aprovação da compra.)
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+
+        print(session)
+        print('Aprovada')
+
+    return HttpResponse(status=200)
+
+# sequencia das mensagens de aprovação do webhook stripe via terminal
+
+"""
+charge.updated
+charged.succeeded
+payment.intent.succeeded
+payment.intent.created
+checkout.session.completed
+
+"""
+
+
+
+"""
+testando o webhook com request curl via terminal linux ( para firjar uma aprovação de pagamento.)
+
+curl -X POST \
+-H "Content-Type: application/json"\
+--data '{type: "checkout.session.completed"}' \
+-is http://localhost:8000/stripe_webhook
+
+"""
+
+
+
+# rota se fosse em produção
 """
 
 def create_checkout_session(request, id):
