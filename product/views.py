@@ -5,7 +5,7 @@ from django.conf import settings
 import stripe.error
 import stripe.webhook
 
-from .models import Product
+from .models import Product, Order
 from django.http import JsonResponse, HttpResponse
 
 from django.views.decorators.csrf import csrf_exempt
@@ -43,6 +43,8 @@ def create_checkout_session(request, id):
         ],
         metadata={
             'id_product': product.id,
+            'name': 'Eliote Alderson',
+            'address': 'Rua Placa mae core i9'
         },
         mode='payment',
         success_url=YOUR_DOMAIN + 'sucesso',
@@ -102,6 +104,13 @@ def stripe_webhook(request):
         session = event['data']['object']
 
         print(session)
+        # pegando os dados para salvar em banco
+        order = Order(product_id=session['metadata']['id_product'],
+                     email=session['customer_details']['email'],
+                     name = session['metadata']['name'],
+                     address = session['metadata']['address'],
+                     status= event['type'],)
+        order.save()
         print('Aprovada')
 
     return HttpResponse(status=200)
