@@ -3,6 +3,8 @@ Python/Django +Stripe
 
 - Django_Framework + stripe
 
+- stripe_webhook + api_checkout
+
 - user admin
 `admsuper`
 `adm@contato.com`
